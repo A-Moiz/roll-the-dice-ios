@@ -15,11 +15,12 @@ struct HomeView: View {
     var buttons: [(buttonTxt: String, action: () -> Void)] {
         [
             ("New Game", newGame),
-            ("About", about),
             ("Rules", rules),
-            ("Reset Scores", resetScores)
+            ("Reset Scores", resetScores),
+            ("Game History", gameHistory)
         ]
     }
+    @State var isShowingRules: Bool = false
     
     var body: some View {
         ZStack {
@@ -56,22 +57,26 @@ struct HomeView: View {
                 Spacer()
             }
         }
+        .sheet(isPresented: $isShowingRules) {
+            RulesView()
+        }
     }
     
     private func newGame() {
         print("New Game tapped")
     }
     
-    private func about() {
-        print("About tapped")
-    }
-    
     private func rules() {
         print("Rules tapped")
+        isShowingRules = true
     }
     
     private func resetScores() {
         print("Reset Scores tapped")
+    }
+    
+    private func gameHistory() {
+        print("Game History tapped")
     }
 }
 
