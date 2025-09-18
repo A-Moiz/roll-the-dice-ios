@@ -21,6 +21,7 @@ struct HomeView: View {
         ]
     }
     @State var isShowingRules: Bool = false
+    @State var startNewGame: Bool = false
     
     var body: some View {
         ZStack {
@@ -59,15 +60,19 @@ struct HomeView: View {
         }
         .sheet(isPresented: $isShowingRules) {
             RulesView()
+                .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $startNewGame) {
+            TargetSelectView()
+                .presentationDetents([.medium])
         }
     }
     
     private func newGame() {
-        print("New Game tapped")
+        startNewGame = true
     }
     
     private func rules() {
-        print("Rules tapped")
         isShowingRules = true
     }
     
