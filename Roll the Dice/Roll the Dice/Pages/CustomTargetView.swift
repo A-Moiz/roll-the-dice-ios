@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct CustomTargetView: View {
+    // MARK: Properties
     @Binding var customTargetText: String
     @Binding var showCustomTargetInput: Bool
     @Binding var customTarget: Int?
@@ -60,9 +61,9 @@ struct CustomTargetView: View {
 }
 
 #Preview {
-    @State var customTargetText: String = ""
-    @State var showCustomTargetInput: Bool = true
-    @State var customTarget: Int?
+    @Previewable @State var customTargetText: String = ""
+    @Previewable @State var showCustomTargetInput: Bool = true
+    @Previewable @State var customTarget: Int?
     CustomTargetView(customTargetText: $customTargetText,
                      showCustomTargetInput: $showCustomTargetInput,
                      customTarget: $customTarget)
