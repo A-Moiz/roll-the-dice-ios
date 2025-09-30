@@ -22,6 +22,8 @@ struct HomeView: View {
     }
     @State var isShowingRules: Bool = false
     @State var startNewGame: Bool = false
+    @State private var showGameFullScreen: Bool = false
+    @State private var selectedTargetScore: Int = 0
     
     var body: some View {
         ZStack {
@@ -63,8 +65,17 @@ struct HomeView: View {
                 .presentationDetents([.medium, .large])
         }
         .sheet(isPresented: $startNewGame) {
-            TargetSelectView()
-                .presentationDetents([.medium])
+            TargetSelectView(onStartGame: { score in
+                selectedTargetScore = score
+                // Dismiss the TargetSelectView sheet
+                startNewGame = false
+                // Present GameView full-screen
+                showGameFullScreen = true
+            })
+            .presentationDetents([.medium])
+        }
+        .fullScreenCover(isPresented: $showGameFullScreen) {
+            GameView(targetScore: $selectedTargetScore)
         }
     }
     

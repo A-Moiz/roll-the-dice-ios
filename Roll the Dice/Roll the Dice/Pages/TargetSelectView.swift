@@ -17,6 +17,8 @@ struct TargetSelectView: View {
     @State private var showCustomTargetInput: Bool = false
     @State private var customTargetText: String = ""
     @Environment(\.dismiss) var dismiss
+    @State var targetScore: Int = 0
+    var onStartGame: ((Int) -> Void)? = nil
     
     var body: some View {
         NavigationStack {
@@ -30,7 +32,8 @@ struct TargetSelectView: View {
                     LazyVGrid(columns: columns) {
                         ForEach(gameTargets, id: \.self) { target in
                             Button {
-                                print(target)
+                                targetScore = target
+                                print(targetScore)
                             } label: {
                                 ButtonView(buttonTxt: String(target))
                             }
@@ -45,14 +48,22 @@ struct TargetSelectView: View {
                             .padding(.horizontal)
                     }
                     
+                    Text("Game Target Score: \(targetScore)")
+                        .font(.title2)
+                        .padding(.top)
+                    
                     Spacer()
                     
                     Button {
-                        // TODO: Go to Game view with game target score
+                        if targetScore > 0 {
+                            onStartGame?(targetScore)
+                            dismiss()
+                        }
                     } label: {
-                        ButtonView(buttonTxt: "Star Game")
+                        ButtonView(buttonTxt: "Start Game")
                             .padding()
                     }
+                    .disabled(targetScore == 0)
                 }
             }
             .toolbar {
@@ -66,6 +77,12 @@ struct TargetSelectView: View {
             }
             .sheet(isPresented: $showCustomTargetInput) {
                 CustomTargetView(customTargetText: $customTargetText, showCustomTargetInput: $showCustomTargetInput, customTarget: $customTarget)
+            }
+            .onChange(of: customTarget) { _, newValue in
+                if let v = newValue {
+                    targetScore = v
+                    print(targetScore)
+                }
             }
             .navigationTitle("Select Game Target")
         }

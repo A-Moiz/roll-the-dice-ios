@@ -17,6 +17,7 @@ struct GameView: View {
     @State var throwDice: Bool = false
     @State var userDiceValues: [Int] = Array(repeating: 1, count: 6)
     @State var isRolling = false
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationStack {
@@ -74,6 +75,9 @@ struct GameView: View {
                       message: Text(alertMessage),
                       primaryButton: .destructive(Text("Quit"), action: { quitGame = true }),
                       secondaryButton: .cancel())
+            }
+            .fullScreenCover(isPresented: $quitGame) {
+                HomeView()
             }
         }
     }
