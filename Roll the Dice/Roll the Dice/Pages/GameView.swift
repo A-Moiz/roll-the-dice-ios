@@ -14,10 +14,9 @@ struct GameView: View {
     @State var alertMessage: String = ""
     @State var quitGame: Bool = false
     @Binding var targetScore: Int
-    @State var throwDice: Bool = false
-    @State var userDiceValues: [Int] = Array(repeating: 1, count: 6)
     @State var isRolling = false
     @Environment(\.dismiss) private var dismiss
+    @StateObject var viewModel = GameViewModel()
     
     var body: some View {
         NavigationStack {
@@ -31,19 +30,39 @@ struct GameView: View {
                             .resizable()
                             .frame(width: 80, height: 80)
                         
-                        DiceImagesView(values: Array(repeating: 3, count: 6), isComputer: true)
+                        DiceImagesView(values: Array(repeating: 3, count: 6), isComputer: true, viewModel: viewModel)
+                        
+                        Text("Computer Score: \(viewModel.computerScore)")
                     }
                     
                     Spacer()
-                    Button {
-                        rollUserDice()
-                    } label: {
-                        ButtonView(buttonTxt: "Throw")
+                    
+                    VStack(spacing: 8) {
+                        Button {
+                            viewModel.rollUserDice()
+                        } label: {
+                            ButtonView(buttonTxt: viewModel.reRolls > 0 ? "Throw" : "No Rerolls Left")
+                        }
+                        .disabled(viewModel.reRolls == 0 || viewModel.isRolling)
+                        
+                        Text("Rerolls left: \(viewModel.reRolls)")
+                            .font(.subheadline)
+                            .foregroundStyle(viewModel.reRolls > 0 ? .white.opacity(0.8) : .red)
+                        
+                        Button {
+                            viewModel.scoreCurrentRoll()
+                        } label: {
+                            ButtonView(buttonTxt: "Score")
+                        }
+                        .disabled(!viewModel.hasThrown || viewModel.isRolling)
                     }
+                    
                     Spacer()
                     
                     VStack(spacing: 20) {
-                        DiceImagesView(values: userDiceValues, isComputer: false)
+                        Text("Your Score: \(viewModel.userScore)")
+                        
+                        DiceImagesView(values: viewModel.userDiceValues, isComputer: false, viewModel: viewModel)
                         
                         Image("user")
                             .resizable()
@@ -81,20 +100,6 @@ struct GameView: View {
             }
         }
     }
-    
-    // MARK: Throw Dice
-    private func rollUserDice() {
-        withAnimation(.easeInOut(duration: 0.5)) {
-            isRolling = true
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            withAnimation(.spring()) {
-                userDiceValues = (0..<6).map { _ in Int.random(in: 1...6) }
-                isRolling = false
-            }
-        }
-    }
 }
 
 #Preview {
@@ -105,6 +110,7 @@ struct DiceImagesView: View {
     // MARK: Properties
     var values: [Int]
     var isComputer: Bool
+    @ObservedObject var viewModel: GameViewModel
     
     var body: some View {
         HStack(spacing: 12) {
@@ -112,7 +118,7 @@ struct DiceImagesView: View {
                 let value = values[index]
                 
                 Button {
-                    print("Dice \(index + 1) tapped with value \(value)")
+                    viewModel.rollUserDie(at: index)
                 } label: {
                     Image("dice-\(value)")
                         .resizable()
@@ -129,3 +135,4 @@ struct DiceImagesView: View {
         }
     }
 }
+
