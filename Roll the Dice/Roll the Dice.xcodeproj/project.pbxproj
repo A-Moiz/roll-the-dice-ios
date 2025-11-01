@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		54B9D9522E9E79300085B6B7 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 54B9D9512E9E79300085B6B7 /* Lottie */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		54303C482E779C2000E48073 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				54B9D9522E9E79300085B6B7 /* Lottie in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = "Roll the Dice";
 			packageProductDependencies = (
+				54B9D9512E9E79300085B6B7 /* Lottie */,
 			);
 			productName = "Roll the Dice";
 			productReference = 54303C3A2E779C1F00E48073 /* Roll the Dice.app */;
@@ -195,6 +201,9 @@
 			);
 			mainGroup = 54303C312E779C1F00E48073;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				54B9D9502E9E79300085B6B7 /* XCRemoteSwiftPackageReference "lottie-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 54303C3B2E779C1F00E48073 /* Products */;
 			projectDirPath = "";
@@ -560,6 +569,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		54B9D9502E9E79300085B6B7 /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		54B9D9512E9E79300085B6B7 /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 54B9D9502E9E79300085B6B7 /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 54303C322E779C1F00E48073 /* Project object */;
 }

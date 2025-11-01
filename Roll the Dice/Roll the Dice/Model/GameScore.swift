@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct GameScore {
+struct GameScore: Codable {
     let id: String
     let date: Date
     let targetScore: Int

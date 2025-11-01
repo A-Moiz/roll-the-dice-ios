@@ -23,8 +23,8 @@ struct TargetSelectView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // MARK: Background
-                Color("MainBG")
+                Image("Shrimpy")
+                    .resizable()
                     .ignoresSafeArea()
                 
                 VStack {
@@ -85,6 +85,7 @@ struct TargetSelectView: View {
                 }
             }
             .navigationTitle("Select Game Target")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

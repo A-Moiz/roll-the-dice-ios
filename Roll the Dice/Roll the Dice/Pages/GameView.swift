@@ -9,65 +9,32 @@ import SwiftUI
 
 struct GameView: View {
     // MARK: Properties
-    @State var showAlert: Bool = false
-    @State var alertTitle: String = ""
-    @State var alertMessage: String = ""
-    @State var quitGame: Bool = false
+    @State private var showAlert: Bool = false
+    @State private var alertTitle: String = ""
+    @State private var alertMessage: String = ""
+    @State private var quitGame: Bool = false
     @Binding var targetScore: Int
-    @State var isRolling = false
+    @State private var isRolling = false
     @Environment(\.dismiss) private var dismiss
-    @StateObject var viewModel = GameViewModel()
+    @ObservedObject var viewModel: GameViewModel
     
     var body: some View {
         NavigationStack {
             ZStack {
-                Color("MainBG")
+                Image("Firewatch")
+                    .resizable()
                     .ignoresSafeArea()
                 
                 VStack {
-                    VStack(spacing: 20) {
-                        Image("robot")
-                            .resizable()
-                            .frame(width: 80, height: 80)
-                        
-                        DiceImagesView(values: Array(repeating: 3, count: 6), isComputer: true, viewModel: viewModel)
-                        
-                        Text("Computer Score: \(viewModel.computerScore)")
-                    }
+                    ComputerView(viewModel: viewModel)
                     
                     Spacer()
                     
-                    VStack(spacing: 8) {
-                        Button {
-                            viewModel.rollUserDice()
-                        } label: {
-                            ButtonView(buttonTxt: viewModel.reRolls > 0 ? "Throw" : "No Rerolls Left")
-                        }
-                        .disabled(viewModel.reRolls == 0 || viewModel.isRolling)
-                        
-                        Text("Rerolls left: \(viewModel.reRolls)")
-                            .font(.subheadline)
-                            .foregroundStyle(viewModel.reRolls > 0 ? .white.opacity(0.8) : .red)
-                        
-                        Button {
-                            viewModel.scoreCurrentRoll()
-                        } label: {
-                            ButtonView(buttonTxt: "Score")
-                        }
-                        .disabled(!viewModel.hasThrown || viewModel.isRolling)
-                    }
+                    GameButtons(viewModel: viewModel)
                     
                     Spacer()
                     
-                    VStack(spacing: 20) {
-                        Text("Your Score: \(viewModel.userScore)")
-                        
-                        DiceImagesView(values: viewModel.userDiceValues, isComputer: false, viewModel: viewModel)
-                        
-                        Image("user")
-                            .resizable()
-                            .frame(width: 80, height: 80)
-                    }
+                    UserView(viewModel: viewModel)
                 }
                 .padding()
             }
@@ -89,21 +56,129 @@ struct GameView: View {
                     Text("Target: \(targetScore)")
                 }
             }
-            .alert(isPresented: $showAlert) {
-                Alert(title: Text(alertTitle),
-                      message: Text(alertMessage),
-                      primaryButton: .destructive(Text("Quit"), action: { quitGame = true }),
-                      secondaryButton: .cancel())
+            .onAppear { viewModel.evaluateEndCondition(target: targetScore) }
+            .alert(isPresented: $showAlert) { quitAlert }
+            .fullScreenCover(isPresented: $quitGame) { HomeView() }
+            .fullScreenCover(isPresented: $viewModel.showEnd) { endScreenView }
+            .onChange(of: viewModel.didUserJustScore) { _, didScore in
+                if didScore {
+                    Task { await viewModel.playComputerTurn() }
+                    viewModel.didUserJustScore = false
+                }
             }
-            .fullScreenCover(isPresented: $quitGame) {
-                HomeView()
+            .onChange(of: viewModel.userScore) { _, _ in
+                viewModel.evaluateEndCondition(target: targetScore)
             }
+            .onChange(of: viewModel.computerScore) { _, _ in
+                viewModel.evaluateEndCondition(target: targetScore)
+            }
+            .onChange(of: viewModel.isRolling) { _, isRolling in
+                if !isRolling { viewModel.evaluateEndCondition(target: targetScore) }
+            }
+        }
+    }
+    
+    private var quitAlert: Alert {
+        Alert(
+            title: Text(alertTitle),
+            message: Text(alertMessage),
+            primaryButton: .destructive(Text("Quit"), action: { quitGame = true }),
+            secondaryButton: .cancel()
+        )
+    }
+    
+    @ViewBuilder
+    private var endScreenView: some View {
+        if let score = viewModel.lastGameScore {
+            EndScreenView(gameScore: score, onDismiss: { dismiss() }, viewModel: viewModel)
+        } else {
+            EndScreenView(
+                gameScore: GameScore(
+                    id: UUID().uuidString,
+                    date: Date(),
+                    targetScore: targetScore,
+                    playerScore: viewModel.userScore,
+                    computerScore: viewModel.computerScore
+                ),
+                onDismiss: { dismiss() }, viewModel: viewModel
+            )
         }
     }
 }
 
 #Preview {
-    GameView(targetScore: .constant(550))
+    GameView(targetScore: .constant(550), viewModel: GameViewModel())
+}
+
+struct ComputerView: View {
+    // MARK: Properties
+    @ObservedObject var viewModel: GameViewModel
+    
+    var body: some View {
+        VStack(spacing: 20.0) {
+            Image("robot")
+                .resizable()
+                .frame(width: 80, height: 80)
+            
+            DiceImagesView(values: viewModel.computerDiceValues, isComputer: true, viewModel: viewModel)
+            
+            Text("Computer Score: \(viewModel.computerScore)")
+        }
+    }
+}
+
+struct UserView: View {
+    // MARK: Properties
+    @ObservedObject var viewModel: GameViewModel
+    
+    var body: some View {
+        VStack(spacing: 20.0) {
+            Text("Your Score: \(viewModel.userScore)")
+            
+            DiceImagesView(values: viewModel.userDiceValues, isComputer: false, viewModel: viewModel)
+                .allowsHitTesting(viewModel.isUserTurn)
+            
+            Image("user")
+                .resizable()
+                .frame(width: 80, height: 80)
+        }
+    }
+}
+
+struct GameButtons: View {
+    // MARK: Properties
+    @ObservedObject var viewModel: GameViewModel
+    
+    var body: some View {
+        VStack(spacing: 8.0) {
+            if viewModel.isUserTurn && !viewModel.hasThrown {
+                Button {
+                    viewModel.rollUserDice()
+                } label: {
+                    ButtonView(buttonTxt: viewModel.reRolls > 0 ? "Throw" : "No Rerolls Left")
+                }
+                .disabled(!viewModel.isUserTurn || viewModel.reRolls == 0 || viewModel.isRolling)
+            }
+            
+            if !viewModel.isUserTurn {
+                Text("Computer's turn")
+                    .font(.title2)
+                    .bold()
+            } else if viewModel.hasThrown {
+                Text("Reroll's left: \(viewModel.reRolls)")
+                    .font(.title3)
+                    .bold()
+            }
+            
+            if viewModel.isUserTurn && (viewModel.hasThrown || viewModel.isRolling) {
+                Button {
+                    viewModel.scoreCurrentRoll()
+                } label: {
+                    ButtonView(buttonTxt: "Score")
+                }
+            }
+        }
+    }
 }
 
 struct DiceImagesView: View {
@@ -118,21 +193,15 @@ struct DiceImagesView: View {
                 let value = values[index]
                 
                 Button {
-                    viewModel.rollUserDie(at: index)
+                    if !isComputer { viewModel.rollUserDie(at: index) }
                 } label: {
                     Image("dice-\(value)")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 50, height: 50)
-//                        .rotation3DEffect(
-//                            Angle(degrees: isComputer ? 0 : Double.random(in: -20...20)),
-//                            axis: (x: 1, y: 1, z: 0)
-//                        )
-                        .animation(.easeInOut(duration: 0.3), value: value)
                 }
-                .disabled(isComputer)
+                .disabled(isComputer || !viewModel.isUserTurn)
             }
         }
     }
 }
-

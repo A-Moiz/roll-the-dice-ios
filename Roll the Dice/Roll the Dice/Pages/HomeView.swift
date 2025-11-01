@@ -6,11 +6,23 @@
 //
 
 import SwiftUI
+import Lottie
 
 struct HomeView: View {
     // MARK: Properties
-    let columns: [GridItem] = [GridItem(.flexible(), spacing: 20),
-                               GridItem(.flexible(), spacing: 20)]
+    @StateObject private var viewModel = GameViewModel()
+    @State private var showGameHistory: Bool = false
+    @State private var showResetAlert: Bool = false
+    @State private var isShowingRules: Bool = false
+    @State private var startNewGame: Bool = false
+    @State private var showGameFullScreen: Bool = false
+    @State private var selectedTargetScore: Int = 0
+    
+    // MARK: Button Grid
+    let columns: [GridItem] = [
+        GridItem(.flexible(), spacing: 20),
+        GridItem(.flexible(), spacing: 20)
+    ]
     
     var buttons: [(buttonTxt: String, action: () -> Void)] {
         [
@@ -20,66 +32,93 @@ struct HomeView: View {
             ("Game History", gameHistory)
         ]
     }
-    @State var isShowingRules: Bool = false
-    @State var startNewGame: Bool = false
-    @State private var showGameFullScreen: Bool = false
-    @State private var selectedTargetScore: Int = 0
     
     var body: some View {
         ZStack {
-            // MARK: Background
-            Color("MainBG")
+            Image("WitchingHour")
+                .resizable()
                 .ignoresSafeArea()
             
-            VStack {
-                Image("background")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity, maxHeight: 250)
-                    .ignoresSafeArea()
-                
-                Text("Roll the Dice")
-                    .font(.system(size: 72,
-                                  weight: .heavy,
-                                  design: .rounded))
-                    .foregroundStyle(.white)
+            VStack(spacing: 40) {
+                // MARK: Header with Lottie animation
+                VStack(spacing: 20) {
+                    LottieView(animation: .named("dice-roll"))
+                        .playing(loopMode: .loop)
+                        .frame(height: 300)
+                        .shadow(radius: 10)
+                    
+                    Text("Roll the Dice")
+                        .font(.system(size: 60,
+                                      weight: .heavy,
+                                      design: .rounded))
+                        .foregroundStyle(Color("BrightYellow"))
+                        .shadow(color: .black.opacity(0.4),
+                                radius: 5, x: 2, y: 2)
+                }
+                .frame(maxHeight: 350)
                 
                 Spacer()
                 
-                LazyVGrid(columns: columns) {
+                // MARK: Button Grid
+                LazyVGrid(columns: columns, spacing: 20) {
                     ForEach(0..<buttons.count, id: \.self) { index in
                         let button = buttons[index]
                         Button(action: button.action) {
                             ButtonView(buttonTxt: button.buttonTxt)
+                                .shadow(color: .black.opacity(0.25), radius: 5, x: 2, y: 2)
                         }
-                        .padding(.vertical, 10)
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .padding(.horizontal)
                 
                 Spacer()
             }
+            .padding(.vertical)
         }
+        // MARK: Sheets and FullScreenCover
         .sheet(isPresented: $isShowingRules) {
             RulesView()
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
+                .background(
+                    RoundedRectangle(cornerRadius: 25, style: .continuous)
+                        .fill(Color("MainBG"))
+                        .ignoresSafeArea()
+                )
         }
         .sheet(isPresented: $startNewGame) {
             TargetSelectView(onStartGame: { score in
                 selectedTargetScore = score
-                // Dismiss the TargetSelectView sheet
                 startNewGame = false
-                // Present GameView full-screen
                 showGameFullScreen = true
             })
-            .presentationDetents([.medium])
+            .presentationDetents([.large])
+            .background(
+                RoundedRectangle(cornerRadius: 25, style: .continuous)
+                    .fill(Color("MainBG"))
+                    .ignoresSafeArea()
+            )
         }
         .fullScreenCover(isPresented: $showGameFullScreen) {
-            GameView(targetScore: $selectedTargetScore)
+            GameView(targetScore: $selectedTargetScore, viewModel: viewModel)
+        }
+        .sheet(isPresented: $showGameHistory) {
+            GameHistory(viewModel: viewModel)
+        }
+        // MARK: Reset Alert
+        .alert("Reset Scores", isPresented: $showResetAlert) {
+            Button("Reset Scores", role: .destructive) {
+                viewModel.gameHistory.removeAll()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to reset all game scores?")
         }
     }
     
+    // MARK: Actions
     private func newGame() {
+        viewModel.reset()
         startNewGame = true
     }
     
@@ -88,11 +127,11 @@ struct HomeView: View {
     }
     
     private func resetScores() {
-        print("Reset Scores tapped")
+        showResetAlert = true
     }
     
     private func gameHistory() {
-        print("Game History tapped")
+        showGameHistory = true
     }
 }
 
